@@ -519,7 +519,9 @@ def load_wunei_resist() -> dict:
 def load_skill_unlock() -> list[dict]:
     """绝学习得条件。`Magictb.enc` = 133 条 × 9 u32，字段布局见 §3.4。
 
-    ⚠️ **级别 A / B 两列的含义至今不明**（已排除「两种难度」）。先按 A 用。
+    级别A＝**最低习得位阶**（需五内全部达标）；级别B＝**保底强制习得位阶**
+    （**无视五内**；0 表示没有保底）。
+    （夏侯仪「摄魂鬼爪」`[1,10,20,…]`：位阶 10 且魔20魂10 习得，否则位阶 20 强制学会）。
     """
     data = decrypt("Magictb.enc")
     rows = np.frombuffer(data[: len(data) // 4 * 4], dtype="<u4").reshape(-1, 9)
