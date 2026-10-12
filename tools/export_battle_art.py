@@ -62,6 +62,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import platform
 from pathlib import Path
 
 import dat_unpack
@@ -540,6 +541,10 @@ def refresh_reactions(fight: Path, out: Path) -> int:
                     count += 1
     return count
 
+def run_export_pack(out_path, pack_list):
+    return subprocess.run(
+        [sys.executable, str(Path(__file__).with_name("export_pack.py")),
+         str(out_path), *pack_list], check=False).returncode
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -651,12 +656,20 @@ def main(argv: list[str]) -> int:
             print("没有要新导的包（都已存在）")
         else:
             print(f"要导 {len(staged)} 个包…")
-            rc = subprocess.run(
-                [sys.executable, str(Path(__file__).with_name("export_pack.py")),
-                 str(out), *staged], check=False).returncode
-            if rc != 0:
-                return rc
-
+            # fix [WinError 206] 文件名或扩展名太长
+            if platform.system() == "Windows":
+                batch_size = 100
+                for i in range(0, len(staged), batch_size):
+                    batch = staged[i:i + batch_size]
+                    print(f"处理批次 {i//batch_size + 1}, {len(batch)} 个包")
+                    rc = run_export_pack(out, batch)
+                    if rc != 0:
+                        return rc
+            else:
+                rc = run_export_pack(out, staged)
+                if rc != 0:
+                    return rc
+                    
 
     if missing:
         # ⚠️ **缺包不一定是错**：`0040`/`0060` 本来就没有 MOV。
